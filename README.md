@@ -20,4 +20,4 @@ Grupos de Variáveis são usados para centralizar valores de variáveis utilizad
 ## Utilização de Environments
 Environments são úteis para implementar regras mais especificamente em stages de deploys.
 
-Por exemplo, pode-se implementar uma regra que para realizar deploy necessita-se de aprovação. Sendo assim, o deploy irá ser iniciado somente quando um usuário do Azure DevOps aprovar tal ação.
+Por exemplo, pode-se implementar uma regra que para realizar o deploy é preciso de uma aprovação. Sendo assim, o deploy irá ser iniciado somente quando um usuário do Azure DevOps aprovar tal ação.
