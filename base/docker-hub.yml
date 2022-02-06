@@ -1,7 +1,4 @@
 parameters:
-- name: artifactName
-  displayName: Artifact Name
-  type: string
 - name: dockerTag1
   displayName: Docker Tag 01
   type: string
@@ -21,9 +18,7 @@ parameters:
 
 steps:
   - checkout: self
-  #- download: current
-    #artifact: ${{ parameters.artifactName }}
-
+  
   - script: docker build -t ${{ parameters.dockerID }}/${{ parameters.dockerTag1 }} -f ${{ parameters.dockerFile }} $(Build.Repository.LocalPath)
     displayName: 'Build Docker Image ${{ parameters.dockerTag1 }}'
 
