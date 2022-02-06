@@ -1,0 +1,44 @@
+parameters:
+- name: artifactName
+  displayName: Artifact Name
+  type: string
+- name: dockerTag1
+  displayName: Docker Tag 01
+  type: string
+- name: dockerTag2
+  displayName: Docker Tag 02
+  type: string
+- name: dockerID
+  displayName: Docker ID
+  type: string
+- name: dockerPass
+  displayName: Docker Password
+  type: string
+- name: dockerFile
+  displayName: Docker File
+  default: 'Dockerfile'
+  type: string
+
+steps:
+  - checkout: self
+  #- download: current
+    #artifact: ${{ parameters.artifactName }}
+
+  - script: docker build -t ${{ parameters.dockerID }}/${{ parameters.dockerTag1 }} -f ${{ parameters.dockerFile }} $(Build.Repository.LocalPath)
+    displayName: 'Build Docker Image ${{ parameters.dockerTag1 }}'
+
+  - script: docker build -t ${{ parameters.dockerID }}/${{ parameters.dockerTag2 }} -f ${{ parameters.dockerFile }} $(Build.Repository.LocalPath)
+    condition: and(succeeded(), ne('${{ parameters.dockerTag2 }}', 'null'))
+    displayName: 'Build Docker Image ${{ parameters.dockerTag2 }}'
+
+  - script: docker login -u ${{ parameters.dockerID }} -p ${{ parameters.dockerPass }}
+    condition: succeeded()
+    displayName: 'Login on Docker Hub'
+
+  - script: docker push ${{ parameters.dockerID }}/${{ parameters.dockerTag1 }}
+    condition: succeeded()
+    displayName: 'Push ${{ parameters.dockerID }}/${{ parameters.dockerTag1 }} to Docker Hub'
+
+  - script: docker push ${{ parameters.dockerID }}/${{ parameters.dockerTag2 }}
+    condition: and(succeeded(), ne('${{ parameters.dockerTag2 }}', 'null'))
+    displayName: 'Push ${{ parameters.dockerID }}/${{ parameters.dockerTag2 }} to Docker Hub'

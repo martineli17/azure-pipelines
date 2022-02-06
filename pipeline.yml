@@ -1,0 +1,117 @@
+trigger:
+- '*'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: Estudos/Pipelines-Comum
+
+variables:
+  - group: geral
+  - name: ArtifactFilesName
+    value: Files
+  - name: pathProject
+    value: ./API/API.csproj
+  - name: pathUnitTestProject
+    value: ./UnitTests/UnitTests.csproj
+
+stages:
+  - stage: Build
+    displayName: Build
+    jobs:
+      - job: Restore
+        steps:
+          - script: dotnet restore ${{ variables.pathProject }}
+          - script: echo Restore Finalizado
+      - job: Build
+        dependsOn: Restore
+        steps:
+          - script: dotnet build ${{ variables.pathProject }} --configuration Release
+          - script: echo Build Finalizado
+      - job: Tests
+        dependsOn: Build
+        steps:
+          - script: dotnet test ${{ variables.pathUnitTestProject }} --configuration Release
+          - script: echo Testes Finalizado
+      - job: Publish
+        displayName: Publish Artifact
+        dependsOn: Tests
+        steps:
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: 'publish'
+              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              artifactName: 'Publish App'
+      #- job: CopyFiles
+        #displayName: Copy Files
+        #dependsOn: Tests
+        #steps:
+          #- task: CopyFiles@2
+            #inputs:
+              #targetFolder: $(Build.ArtifactStagingDirectory)
+          #- task: PublishPipelineArtifact@1
+            #inputs:
+              #targetPath: '$(Build.ArtifactStagingDirectory)'
+              #artifactName: '${{ variables.ArtifactFilesName }}' 
+  - stage: DEV
+    displayName: DEV
+    dependsOn: Build
+    jobs:
+      - deployment: Deploy
+        environment: Dev
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: docker-hub.yml@templates
+                  parameters:
+                    artifactName: '${{ variables.ArtifactFilesName }}'
+                    dockerID: '$(dockerID)'
+                    dockerPass: '$(dockerPass)'
+                    dockerTag1: 'estudos-pipelines:dev-$(Build.BuildId)'
+                    dockerTag2: 'null'
+
+  - stage: QA
+    displayName: QA
+    dependsOn: Build
+    jobs:
+      - deployment: Deploy 
+        environment: QA
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: docker-hub.yml@templates
+                  parameters:
+                    artifactName: '${{ variables.ArtifactFilesName }}'
+                    dockerID: '$(dockerID)'
+                    dockerPass: '$(dockerPass)'
+                    dockerTag1: 'estudos-pipelines:qa-$(Build.BuildId)'
+                    dockerTag2: 'null'
+  - stage: PROD
+    dependsOn: 
+      - QA
+      - Dev
+    displayName: PROD
+    jobs:
+      - deployment: Deploy
+        environment: Prod
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: docker-hub.yml@templates
+                  parameters:
+                    artifactName: '${{ variables.ArtifactFilesName }}'
+                    dockerID: '$(dockerID)'
+                    dockerPass: '$(dockerPass)'
+                    dockerTag1: 'estudos-pipelines:prod-$(Build.BuildId)'
+                    dockerTag2: 'latest'
+    condition: eq(variables['Build.SourceBranchName'], 'master')
