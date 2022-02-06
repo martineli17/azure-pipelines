@@ -16,3 +16,8 @@ Sendo assim, utiliza-se os templates para evitar a duplicação de código e cen
 Grupos de Variáveis são usados para centralizar valores de variáveis utilizados nas pipelines e que podem ser utilizados em mais de uma pipeline.
 
 É útil para evitar a repetição de variáveis e não expor os seus valores nas pipelines.
+
+## Utilização de Environments
+Environments são úteis para implementar regras mais especificamente em stages de deploys.
+
+Por exemplo, pode-se implementar uma regra que para realizar deploy necessita-se de aprovação. Sendo assim, o deploy irá ser iniciado somente quando um usuário do Azure DevOps aprovar tal ação.
